@@ -88,6 +88,9 @@ pipeline {
                     echo "Deploying to Kubernetes in AWS EKS..."
                     sh "aws eks update-kubeconfig --name ${eksClusterName} --region ${awsRegion}"
                     echo "Kubectl configured for EKS cluster: ${eksClusterName}"
+                }
+            }
+        }
 
     }
 }
