@@ -9,27 +9,6 @@ pipeline {
     // Agent is set to 'any' to run on the primary Jenkins node.
     // For production, consider using a dedicated Docker agent with necessary tools.
     agent any
-
-    // Options for the pipeline
-    options {
-        // BuildDiscarder to keep a limited number of builds
-        buildDiscarder(logRotator(numToKeepStr: '10'))
-        // Timeout for the entire pipeline
-        timeout(time: 30, unit: 'MINUTES')
-        // Enable timestamps in console output
-        timestamps()
-    }
-
-    // Define environment variables specific to credentials
-    environment {
-        // AWS credentials (using the ID configured in Jenkins Credentials)
-        AWS_ACCESS_KEY_ID = credentials('aws-credentials').getAWSAccessKeyId()
-        AWS_SECRET_ACCESS_KEY = credentials('aws-credentials').getSecretAccessKey()
-        // DOCKER_USERNAME and DOCKER_PASSWORD for Docker Hub login (using the ID configured)
-        DOCKER_USERNAME = credentials('docker-hub-credentials').getUsername()
-        DOCKER_PASSWORD = credentials('docker-hub-credentials').getPassword()
-    }
-
     // Stages of the CI/CD pipeline
     stages {
         // Stage 1: Git Clone
@@ -38,7 +17,7 @@ pipeline {
                 script {
                     echo "Cloning repository..."
                     // Use git plugin to clone the repository
-                    git url: 'https://github.com/sindhiya1930/simple-python-webapp.git', branch: 'main'
+                    git url: 'https://github.com/sindhiya1930/simple-python-webapp.git', branch: 'master'
                     echo "Repository cloned successfully."
                 }
             }
@@ -184,21 +163,6 @@ spec:
                     echo "Deployment to Kubernetes completed."
                 }
             }
-        }
-    }
-
-    // Post-build actions
-    post {
-        always {
-            echo "Pipeline finished."
-            // Clean up workspace after build
-            deleteDir()
-        }
-        success {
-            echo "Pipeline succeeded!"
-        }
-        failure {
-            echo "Pipeline failed!"
         }
     }
 }
