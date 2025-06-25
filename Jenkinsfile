@@ -91,6 +91,12 @@ pipeline {
                 }
             }
         }
-
+        stage('Deploy to EKS') {
+            steps {
+                // Example: Deploy a Kubernetes manifest to EKS
+                sh 'kubectl apply -f deployment.yaml'
+                sh 'kubectl apply -f service.yaml'
+            }
+        }
     }
 }
