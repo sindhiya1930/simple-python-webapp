@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-python-webapp-deployment
+  labels:
+    app: simple-python-webapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: simple-python-webapp
+  template:
+    metadata:
+      labels:
+        app: simple-python-webapp
+    spec:
+      containers:
+      - name: simple-python-webapp
+        image: sindhiya1930/simple-python-webapp
+        ports:
+        - containerPort: 5000
