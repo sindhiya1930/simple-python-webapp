@@ -38,7 +38,7 @@ pipeline {
                 script {
                     echo "Cloning repository..."
                     // Use git plugin to clone the repository
-                    git url: 'YOUR_GITHUB_REPO_URL', branch: 'main'
+                    git url: 'https://github.com/sindhiya1930/simple-python-webapp.git', branch: 'main'
                     echo "Repository cloned successfully."
                 }
             }
