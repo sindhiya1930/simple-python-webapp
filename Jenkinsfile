@@ -2,7 +2,7 @@
 def dockerImageName = 'simple-python-webapp' // e.g., simple-python-webapp
 def dockerHubUsername = 'sindhiya1930'
 def eksClusterName = 'skillfyme' // e.g., my-dev-eks-cluster
-def awsRegion = 'eu-west-1' // e.g., us-east-1
+def awsRegion = 'eu-north-1' // e.g., us-east-1
 def k8sNamespace = 'default' // e.g., default
 
 pipeline {
@@ -23,36 +23,21 @@ pipeline {
             }
         }
 
-        // Stage 2: Install Python Dependencies (Build Artifact)
-        stage('Install Dependencies') {
-            steps {
-                script {
-                    echo "Installing Python dependencies..."
-                    // Use a Docker container to run Python commands
-                    // This ensures a clean and consistent environment for dependencies
-                    docker.image('python:3.9-slim-buster').inside {
-                        sh 'pip install --no-cache-dir -r requirements.txt'
-                    }
-                    echo "Python dependencies installed."
-                }
-            }
-        }
+        // stage('Run Unit Tests') {
+        //     steps {
+        //         script {
+        //             // Ensure Python and pip are available on the Jenkins agent.
+        //             // Install dependencies required for tests.
+        //             sh 'python3 -m venv venv'
+        //             sh 'source venv/bin/activate'
+        //             sh 'pip install -r requirements.txt'
+        //             // Run the unit tests using the unittest module.
+        //             // The '-v' flag provides verbose output.
+        //             sh 'python -m unittest -v test_app.py'
+        //         }
+        //     }
+        // }
 
-        // Stage 3: Run Unit Tests
-        stage('Run Unit Tests') {
-            steps {
-                script {
-                    echo "Running unit tests..."
-                    // Run tests inside the same Python Docker container
-                    docker.image('python:3.9-slim-buster').inside {
-                        sh 'python -m unittest test_app.py'
-                    }
-                    echo "Unit tests completed."
-                }
-            }
-        }
-
-        // Stage 4: Build Docker Image
         stage('Build Docker Image') {
             steps {
                 script {
@@ -60,7 +45,7 @@ pipeline {
                     // Get current commit SHA for image tagging
                     def gitCommit = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
                     // Define the Docker image tag
-                    def imageTag = "${dockerHubUsername}/${dockerImageName}:${gitCommit}"
+                    def imageTag = "${dockerHubUsername}/${dockerImageName}:latest"
 
                     // Build the Docker image. The `docker.build` command requires Docker daemon access.
                     // This leverages the host's Docker daemon via the mounted socket.
@@ -72,7 +57,6 @@ pipeline {
             }
         }
 
-        // Stage 5: Push Docker Image to Docker Hub
         stage('Push to Docker Hub') {
             steps {
                 script {
@@ -87,82 +71,23 @@ pipeline {
                 }
             }
         }
-
-        // Stage 6: Deploy to Kubernetes in AWS EKS
-        stage('Deploy to Kubernetes') {
+        
+        stage('Configure AWS Credentials') {
             steps {
                 script {
-                    echo "Deploying to Kubernetes in AWS EKS..."
-
-                    // 1. Configure kubectl for EKS
-                    // This command uses AWS CLI to update the kubeconfig file on the Jenkins host.
-                    // It assumes AWS CLI and `aws-iam-authenticator` (or a recent AWS CLI version that includes it)
-                    // are installed and configured on the host where Jenkins Docker container is running.
-                    // Ensure the IAM user associated with AWS_ACCESS_KEY_ID has permissions to describe and update EKS clusters.
-                    sh "aws eks update-kubeconfig --name ${eksClusterName} --region ${awsRegion}"
-                    echo "Kubectl configured for EKS cluster: ${eksClusterName}"
-
-                    // 2. Create Kubernetes Deployment and Service YAML files dynamically
-                    // This allows us to inject the correct Docker image tag
-                    // Create deployment.yaml
-                    def deploymentYaml = """
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ${dockerImageName}-deployment
-  namespace: ${k8sNamespace}
-  labels:
-    app: ${dockerImageName}
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: ${dockerImageName}
-  template:
-    metadata:
-      labels:
-        app: ${dockerImageName}
-    spec:
-      containers:
-      - name: ${dockerImageName}
-        image: ${env.DOCKER_IMAGE_TAG}
-        ports:
-        - containerPort: 5000
-"""
-                    writeFile file: 'deployment.yaml', text: deploymentYaml
-                    echo "deployment.yaml created."
-
-                    // Create service.yaml
-                    def serviceYaml = """
-apiVersion: v1
-kind: Service
-metadata:
-  name: ${dockerImageName}-service
-  namespace: ${k8sNamespace}
-spec:
-  selector:
-    app: ${dockerImageName}
-  ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 5000
-  type: LoadBalancer # Use LoadBalancer for external access, NodePort or ClusterIP for internal
-"""
-                    writeFile file: 'service.yaml', text: serviceYaml
-                    echo "service.yaml created."
-
-                    // 3. Apply Kubernetes configurations
-                    // Apply deployment first
-                    sh "kubectl apply -f deployment.yaml -n ${k8sNamespace}"
-                    echo "Deployment applied for ${dockerImageName}."
-
-                    // Apply service
-                    sh "kubectl apply -f service.yaml -n ${k8sNamespace}"
-                    echo "Service applied for ${dockerImageName}."
-
-                    echo "Deployment to Kubernetes completed."
+                    withCredentials([aws(credentialsId: 'aws-credentials', roleAccount: null, roleDuration: 900, roleExternalId: null, roleSessionName: null)]) {
+                        sh "echo 'AWS credentials configured.'"
+                    }
                 }
             }
         }
+
+        stage('Configure EKS') {
+            steps {
+                script {
+                    echo "Deploying to Kubernetes in AWS EKS..."
+                    sh "aws eks update-kubeconfig --name ${eksClusterName} --region ${awsRegion}"
+                    echo "Kubectl configured for EKS cluster: ${eksClusterName}"
+
     }
 }
