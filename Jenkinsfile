@@ -23,20 +23,20 @@ pipeline {
             }
         }
 
-        // stage('Run Unit Tests') {
-        //     steps {
-        //         script {
-        //             // Ensure Python and pip are available on the Jenkins agent.
-        //             // Install dependencies required for tests.
-        //             sh 'python3 -m venv venv'
-        //             sh 'source venv/bin/activate'
-        //             sh 'pip install -r requirements.txt'
-        //             // Run the unit tests using the unittest module.
-        //             // The '-v' flag provides verbose output.
-        //             sh 'python -m unittest -v test_app.py'
-        //         }
-        //     }
-        // }
+        stage('Run Unit Tests') {
+            steps {
+                script {
+                    // Ensure Python and pip are available on the Jenkins agent.
+                    // Install dependencies required for tests.
+                    sh 'python3 -m venv venv'
+                    sh 'source venv/bin/activate'
+                    sh 'pip install -r requirements.txt'
+                    // Run the unit tests using the unittest module.
+                    // The '-v' flag provides verbose output.
+                    sh 'python -m unittest -v test_app.py'
+                }
+            }
+        }
 
         stage('Build Docker Image') {
             steps {
@@ -93,7 +93,6 @@ pipeline {
         }
         stage('Deploy to EKS') {
             steps {
-                // Example: Deploy a Kubernetes manifest to EKS
                 sh 'kubectl apply -f deployment.yaml'
                 sh 'kubectl apply -f service.yaml'
             }
