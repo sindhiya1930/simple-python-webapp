@@ -1,12 +1,23 @@
 apiVersion: v1
+
 kind: Service
+
 metadata:
+
   name: simple-python-webapp-service
+
 spec:
+
   selector:
+
     app: simple-python-webapp
+
   ports:
+
   - protocol: TCP
+
     port: 80
+
     targetPort: 5000
+
   type: LoadBalancer
